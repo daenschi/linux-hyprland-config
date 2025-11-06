@@ -102,3 +102,5 @@ source $ZSH/oh-my-zsh.sh
 # Example aliases
 # alias zshconfig="mate ~/.zshrc"
 # alias ohmyzsh="mate ~/.oh-my-zsh"
+alias copyconf="~/Dev/copy_configs.sh"
+alias hyprconf="nvim ~/.conf/hypr/hyprland.conf"
