@@ -30,10 +30,10 @@ fi
 if [ "$distro" = "Fedora Linux" ]; then
 	sudo dnf update -y && sudo dnf upgrade -y
 	echo "System up to date"
-	sudo dnf remove wofi
 	echo "installing dependencies"
-	sudo dnf install zsh waybar tmux alacritty hyprpaper nmtui cheese grim slurp go rofi ripgrep fzf 
+	sudo dnf install pavucontrol zsh waybar tmux alacritty hyprpaper nmtui cheese grim slurp go rofi ripgrep fzf -y
 	echo "dependencies installed"
+	sudo dnf remove wofi -y
 	echo "intalling ohmyzisch"
 	if [ ! -f .zshrc ]; then
 		sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
