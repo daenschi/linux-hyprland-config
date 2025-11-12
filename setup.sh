@@ -1,116 +1,99 @@
-#! /bin/bash
+#!/usr/bin/env bash
 ##################################
-## Daenschis PC Setup Script 	##
+## Daenschis PC Setup Script    ##
 ##################################
-## Version 0.2			##
-## Date 12.11.2025		##
+## Version 0.2                  ##
+## Date 12.11.2025              ##
 ##################################
 
-waybarDir=~/.config/waybar/
-waybarConf=~/.config/waybar/config.jsonc
+# On any command fail, or unset variable or pipeline fail, exit the script
+set -euo pipefail
+# Restrict word splitting
+IFS=$'\n\t'
 
-hyprlandDir=~/.config/hypr/
-hyprlandConf=~/.config/hypr/hyprland.conf
-hyprpaperConf=~/.config/hypr/hyprpaper.conf
+waybarDir="$HOME/.config/waybar"
+waybarConf="$waybarDir/config.jsonc"
 
-alacrittyDir=~/.config/alacritty/
-alacrittyConf=~/.config/alacritty/alacritty.toml
+hyprlandDir="$HOME/.config/hypr"
+hyprlandConf="$hyprlandDir/hyprland.conf"
+hyprpaperConf="$hyprlandDir/hyprpaper.conf"
 
-zshConf="~/.zshrc"
+alacrittyDir="$HOME/.config/alacritty"
+alacrittyConf="$alacrittyDir/alacritty.toml"
+
+zshConf="$HOME/.zshrc"
 
 echo "lets go, checking os..."
-sleep 2
+sleep 1
+
+distro_id=""
+distro_like=""
 
 if [ -r /etc/os-release ]; then
-	. /etc/os-release
-	distro=$NAME
-	distri=$ID_LIKE	
-	echo "running on $distro"
+    # shellcheck disable=SC1091
+    . /etc/os-release
+    distro_id=${NAME:-}
+    distro_like=${ID_LIKE:-}
+    echo "running on ${distro:-Unknown}"
 fi
 
-if [ "$distro" = "Fedora Linux" ]; then
-	sudo dnf update -y && sudo dnf upgrade -y
-	echo "System up to date"
-	echo "installing dependencies"
-	sudo dnf install pavucontrol zsh waybar tmux alacritty hyprpaper nmtui cheese grim slurp go rofi ripgrep fzf -y
-	echo "dependencies installed"
-	sudo dnf remove wofi -y
-	echo "intalling ohmyzisch"
-	if [ ! -f .zshrc ]; then
-		sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
-	fi
-	echo "copying configs"
-	sleep 1
-	# Copy Waybar
-	if [ -d $waybarDir ]; then
-		echo "waybar dir exists at $waybarDir"
-		cp ./config.jsonc $waybarDir
-		echo "waybar conf copied"
-	else
-		echo "creating dir and copying config"
-		mkdir $waybarDir
-		cp ./config.jsonc $waybarDir
-		echo "waybar conf copied"
-	fi
-	# Copy hyprland and hyprpaper
-	if [ ! -f $hyprlandConf ]; then
-		echo "hyprland dir exists at $hyprlandDir"
-		cp ./hyprland.conf ~/.config/hypr/hyprland.conf
-		echo "hyprland conf copied"
-		cp ./hyprpaper.conf $hyprpaperConf
-		cp ./galaxy.jpg ~/Pictures/galaxy.jpg
-		echo "copied hyprland and hyprpaper"
-	fi
-	# copy alacritty
-	if [ -d $alacrittyDir ]; then
-		echo "Copying alacritty conf"
-	else
-		mkdir $alacrittyDir
-		cp ./alacritty.toml $alacrittyConf
-		echo "Copied Alacritty conf"
-	fi
-	hyprctl reload
+# helper: create parent dir and copy file if source exists
+_safe_cp() {
+    local src=$1 dest=$2
+    if [ -f "$src" ]; then
+        mkdir -p "$(dirname "$dest")"
+        cp "$src" "$dest"
+        echo "copied $src -> $dest"
+    else
+        echo "warning: source $src not found"
+    fi
+}
+
+if [ "$distro_id" = "Fedora Linux" ]; then
+    sudo dnf upgrade --refresh -y
+    echo "installing dependencies"
+    sudo dnf install -y pavucontrol zsh waybar tmux alacritty hyprpaper nmtui cheese grim slurp go rofi ripgrep fzf
+    echo "removing wofi if present"
+    sudo dnf remove -y wofi
+
+    echo "installing oh-my-zsh if needed"
+    if [ ! -f "$zshConf" ]; then
+        sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" || true
+    fi
+
+    echo "copying configs"
+    _safe_cp ./config.jsonc "$waybarConf"
+    if [ ! -f "$hyprlandConf" ]; then
+        _safe_cp ./hyprland.conf "$hyprlandConf"
+        _safe_cp ./hyprpaper.conf "$hyprpaperConf"
+        _safe_cp ./galaxy.jpg "$HOME/Pictures/galaxy.jpg"
+    fi
+    _safe_cp ./alacritty.toml "$alacrittyConf"
+
 fi
 
-if [ "$distri" = "arch" ]; then
-	sudo pacman -Syu 
-	echo "System up to date"
-	echo "installing dependencies"
-	sudo pacman -Sy pavucontrol zsh waybar tmux alacritty hyprpaper nmtui cheese grim slurp go rofi ripgrep fzf 
-	echo "dependencies installed"
-	sudo pacman -R wofi 
-	echo "intalling ohmyzisch"
-	if [ ! -f .zshrc ]; then
-		sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
-	fi
-	echo "copying configs"
-	sleep 1
-	# Copy Waybar
-	if [ -d $waybarDir ]; then
-		echo "waybar dir exists at $waybarDir"
-		cp ./config.jsonc $waybarDir
-		echo "waybar conf copied"
-	else
-		echo "creating dir and copying config"
-		mkdir $waybarDir
-		cp ./config.jsonc $waybarDir
-		echo "waybar conf copied"
-	fi
-	# Copy hyprland and hyprpaper
-	if [ ! -f $hyprlandConf ]; then
-		echo "hyprland dir exists at $hyprlandDir"
-		cp ./hyprland.conf ~/.config/hypr/hyprland.conf
-		echo "hyprland conf copied"
-		cp ./hyprpaper.conf $hyprpaperConf
-		cp ./galaxy.jpg ~/Pictures/galaxy.jpg
-		echo "copied hyprland and hyprpaper"
-	fi
-	# copy alacritty
-	if [ -d $alacrittyDir ]; then
-		echo "Copying alacritty conf"
-	else
-		mkdir $alacrittyDir
-		cp ./alacritty.toml $alacrittyConf
-		echo "Copied Alacritty conf"
-	fi
+if echo "$distro_like" | grep -qi 'arch'; then
+    sudo pacman -Syu --noconfirm
+    echo "installing dependencies"
+    sudo pacman -S --noconfirm pavucontrol zsh waybar tmux alacritty hyprpaper cheese grim slurp go rofi ripgrep fzf
+    echo "removing wofi if present"
+    sudo pacman -R --noconfirm wofi || true
+
+    echo "installing oh-my-zsh if needed"
+    if [ ! -f "$zshConf" ]; then
+        sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" || true
+    fi
+
+    echo "copying configs"
+    _safe_cp ./config.jsonc "$waybarConf"
+    if [ ! -f "$hyprlandConf" ]; then
+        _safe_cp ./hyprland.conf "$hyprlandConf"
+        _safe_cp ./hyprpaper.conf "$hyprpaperConf"
+        _safe_cp ./galaxy.jpg "$HOME/Pictures/galaxy.jpg"
+    fi
+    _safe_cp ./alacritty.toml "$alacrittyConf"
+fi
+
+if command -v hyprctl >/dev/null 2>&1; then
+        hyprctl reload || true
 fi
