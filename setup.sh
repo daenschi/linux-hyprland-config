@@ -24,6 +24,7 @@ sleep 2
 if [ -r /etc/os-release ]; then
 	. /etc/os-release
 	distro=$NAME
+	distri=$ID_LIKE	
 	echo "running on $distro"
 fi
 
@@ -69,4 +70,47 @@ if [ "$distro" = "Fedora Linux" ]; then
 		echo "Copied Alacritty conf"
 	fi
 	hyprctl reload
+fi
+
+if [ "$distri" = "arch" ]; then
+	sudo pacman -Syu 
+	echo "System up to date"
+	echo "installing dependencies"
+	sudo pacman -Sy pavucontrol zsh waybar tmux alacritty hyprpaper nmtui cheese grim slurp go rofi ripgrep fzf 
+	echo "dependencies installed"
+	sudo pacman -R wofi 
+	echo "intalling ohmyzisch"
+	if [ ! -f .zshrc ]; then
+		sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+	fi
+	echo "copying configs"
+	sleep 1
+	# Copy Waybar
+	if [ -d $waybarDir ]; then
+		echo "waybar dir exists at $waybarDir"
+		cp ./config.jsonc $waybarDir
+		echo "waybar conf copied"
+	else
+		echo "creating dir and copying config"
+		mkdir $waybarDir
+		cp ./config.jsonc $waybarDir
+		echo "waybar conf copied"
+	fi
+	# Copy hyprland and hyprpaper
+	if [ ! -f $hyprlandConf ]; then
+		echo "hyprland dir exists at $hyprlandDir"
+		cp ./hyprland.conf ~/.config/hypr/hyprland.conf
+		echo "hyprland conf copied"
+		cp ./hyprpaper.conf $hyprpaperConf
+		cp ./galaxy.jpg ~/Pictures/galaxy.jpg
+		echo "copied hyprland and hyprpaper"
+	fi
+	# copy alacritty
+	if [ -d $alacrittyDir ]; then
+		echo "Copying alacritty conf"
+	else
+		mkdir $alacrittyDir
+		cp ./alacritty.toml $alacrittyConf
+		echo "Copied Alacritty conf"
+	fi
 fi
